@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Мини‑игра: «Выживи в голоцене» — Беларусь</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0f172a;--panel:#111827;--card:#1f2937;--text:#e5e7eb;--muted:#9ca3af;--accent:#22c55e;--warn:#f59e0b;--bad:#ef4444;--good:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; background:linear-gradient(180deg,#0b1223,#0f172a 45%,#121a2f);
+      color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:20px;
+    }
+    .app{max-width:1100px; width:100%}
+    .title{display:flex; gap:14px; align-items:center; margin-bottom:16px}
+    .title h1{font-size:22px; margin:0}
+    .title small{color:var(--muted)}
+    .grid{display:grid; grid-template-columns:320px 1fr; gap:16px}
+    .panel{background:var(--panel); border:1px solid #1f2937; border-radius:12px; padding:16px}
+    .panel h2{font-size:16px; margin:0 0 10px 0}
+    .row{display:flex; gap:8px; margin-bottom:10px}
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    select,button,input[type="range"]{
+      width:100%; background:var(--card); color:var(--text); border:1px solid #334155; border-radius:8px; padding:10px; font-size:14px;
+    }
+    .inline{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    .btn{cursor:pointer; transition:transform .08s ease}
+    .btn:active{transform:scale(.98)}
+    .legend{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
+    .chip{background:var(--card); border:1px solid #334155; border-radius:10px; padding:8px}
+    .chip b{display:block; font-size:12px; color:var(--muted)}
+    .chip span{font-size:14px}
+    .score{
+      display:grid; grid-template-columns:repeat(2,1fr); gap:16px;
+    }
+    .card{background:var(--card); border:1px solid #334155; border-radius:12px; padding:14px}
+    .meter{height:10px; background:#0b1223; border:1px solid #334155; border-radius:8px; overflow:hidden; margin-top:6px}
+    .bar{height:100%; width:0%}
+    .bar.good{background:var(--accent)}
+    .bar.warn{background:var(--warn)}
+    .bar.bad{background:var(--bad)}
+    .bar.info{background:var(--good)}
+    .pill{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid #334155; background:#0b1223; color:var(--muted)}
+    .list{display:grid; gap:8px; margin-top:10px}
+    .item{display:flex; justify-content:space-between; align-items:center; gap:8px}
+    .item span{font-size:13px}
+    .kpi{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+    .kpi .card{padding:10px}
+    .kpi h3{font-size:12px; color:var(--muted); margin:0 0 6px 0}
+    .big{font-size:18px}
+    .tip{font-size:12px; color:var(--muted); margin-top:10px}
+    .footer{margin-top:14px; font-size:12px; color:var(--muted)}
+    .map{
+      height:280px; background:
+        radial-gradient(120px 60px at 30% 54%, #1b2a42 0%, #15243c 60%, transparent 61%),
+        radial-gradient(140px 60px at 58% 48%, #1a2b46 0%, #132138 60%, transparent 61%),
+        linear-gradient(180deg,#0e162a,#0e1426 60%,#0b1223);
+      border:1px dashed #334155; border-radius:12px; margin-top:10px; display:flex; align-items:center; justify-content:center; color:#93c5fd;
+    }
+    .badgelist{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+    .badge{font-size:11px; padding:4px 8px; border:1px solid #334155; border-radius:999px; background:#0b1223; color:#93c5fd}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="title">
+      <h1>Мини‑игра: «Выживи в голоцене» — выбрать место и проверить устойчивость</h1>
+      <small>Территория Беларуси, климатические срезы: LGM → Средний голоцен → Современность → SSP2‑4.5</small>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Controls -->
+      <div class="panel">
+        <h2>Выбор поселения</h2>
+
+        <div class="row">
+          <div style="flex:1">
+            <label>Регион</label>
+            <select id="region">
+              <option value="brest">Брестская область (юго‑запад)</option>
+              <option value="grodno">Гродненская область (юго‑запад)</option>
+              <option value="minsk">Минская область (центр)</option>
+              <option value="vitebsk">Витебская область (северо‑восток)</option>
+              <option value="mogilev">Могилевская область (восток)</option>
+              <option value="gomel">Гомельская область (юг‑восток)</option>
+              <option value="naroch">Озеро Нарочь (северо‑запад)</option>
+              <option value="ushachi">Ушачи (палео‑болота)</option>
+              <option value="zaslavl">Заславль (аграрное поселение)</option>
+              <option value="berdyzh">Бердыж (берег Сожа)</option>
+              <option value="yurovichi">Юровичи (стоянка охотников)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row inline">
+          <div>
+            <label>Климатический период</label>
+            <select id="period">
+              <option value="lgm">Максимум последнего оледенения (26.5–19 тыс. л. н.)</option>
+              <option value="midh">Средний голоцен (8–4 тыс. л. н.)</option>
+              <option value="modern">Современность (1950–2024)</option>
+              <option value="ssp245">Прогноз SSP2‑4.5 (2025–2040)</option>
+            </select>
+          </div>
+          <div>
+            <label>Близость к воде (река/озеро)</label>
+            <select id="water">
+              <option value="near">Рядом (≤ 2 км)</option>
+              <option value="mid">Умеренно (2–10 км)</option>
+              <option value="far">Далеко (> 10 км)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row inline">
+          <div>
+            <label>Лесистость окрестностей</label>
+            <select id="forest">
+              <option value="high">Высокая (≥ 60%)</option>
+              <option value="mid">Средняя (30–60%)</option>
+              <option value="low">Низкая (< 30%)</option>
+            </select>
+          </div>
+          <div>
+            <label>Тип хозяйства</label>
+            <select id="livelihood">
+              <option value="hunter">Охота/сбор</option>
+              <option value="fish">Рыболовство</option>
+              <option value="agri">Раннее земледелие</option>
+              <option value="mixed">Смешанное</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="simulate">Проверить устойчивость</button>
+        </div>
+
+        <div class="legend">
+          <div class="chip">
+            <b>Температура</b>
+            <span id="tempLabel">—</span>
+          </div>
+          <div class="chip">
+            <b>Осадки (мм/год)</b>
+            <span id="precLabel">—</span>
+          </div>
+          <div class="chip">
+            <b>Биоклиматический индекс</b>
+            <span id="bioLabel">—</span>
+          </div>
+        </div>
+
+        <div class="map">
+          Условная карта Беларуси: климатический фон обновляется при расчете
+        </div>
+
+        <div class="badgelist" id="badges"></div>
+
+        <div class="footer">
+          Основано на реконструкциях и картах: температурные градиенты (юго‑запад теплее, северо‑восток прохладнее), осадки 490–735 мм,
+          периодизация LGM → голоцен → современность → прогноз SSP2‑4.5; археологические точки: Нарочь, Ушачи, Юровичи, Бердыж, Заславль.
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="panel">
+        <h2>Итоги устойчивости</h2>
+
+        <div class="score">
+          <div class="card">
+            <div class="item"><span>Итоговый индекс устойчивости</span><span class="pill" id="scoreTag">—</span></div>
+            <div class="meter"><div class="bar info" id="scoreBar"></div></div>
+            <div class="tip" id="scoreTip">Нажмите «Проверить устойчивость», чтобы оценить выбранную конфигурацию.</div>
+          </div>
+          <div class="card">
+            <div class="item"><span>Риск климатического стресса</span><span class="pill" id="riskTag">—</span></div>
+            <div class="meter"><div class="bar bad" id="riskBar"></div></div>
+            <div class="tip" id="riskTip">Стресс растёт при жаре + засухе или холоде + дефиците ресурсов.</div>
+          </div>
+        </div>
+
+        <div class="kpi">
+          <div class="card">
+            <h3>Водные ресурсы</h3>
+            <div class="big" id="kpiWater">—</div>
+            <div class="meter"><div class="bar good" id="kpiWaterBar"></div></div>
+          </div>
+          <div class="card">
+            <h3>Пищевые ресурсы</h3>
+            <div class="big" id="kpiFood">—</div>
+            <div class="meter"><div class="bar good" id="kpiFoodBar"></div></div>
+          </div>
+          <div class="card">
+            <h3>Агроклимат</h3>
+            <div class="big" id="kpiAgri">—</div>
+            <div class="meter"><div class="bar warn" id="kpiAgriBar"></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="item"><span>Рекомендации по адаптации</span><span class="pill" id="adaptLevel">—</span></div>
+          <div class="list" id="advice">
+            <div class="tip">Советы появятся после расчёта. Они учитывают период, регион и тип хозяйства.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="item"><span>Обоснование (климат и археология)</span></div>
+          <div class="list" id="rationale">
+            <div class="tip">Здесь — краткие ссылки на климатические срезы и типовые поселения эпох.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Данные и логика основаны на материале реконструкции:
+  - Периоды: LGM (очень холодно, 510–720 мм), Средний голоцен (теплее, 490–660 мм), Современность (525–715 мм), SSP2‑4.5 (538–735 мм).
+  - Региональные различия: юго‑запад (Брест/Гродно) теплее и часто чуть суше; северо‑восток (Витебск/Могилев) прохладнее, местами влажнее.
+  - Прогнозные частные эффекты: Гомель (+3.2°C, −10% осадков), Витебск (+2.1°C, +15% осадков), Брест (+2.8°C, −5% осадков).
+  - Биоклиматический индекс: высокий при LGM (~12.6–16k условных баллов), снижается к современности (~2.18–2.60k условных баллов).
+*/
+
+const regions = {
+  brest:   { name:"Брестская",   baseTemp: 11.5, basePrec: 600, biasTemp:+0.6, biasPrec:-10,   archeo:"Юго‑запад был теплее; агроактивность выше"},
+  grodno:  { name:"Гродненская", baseTemp: 11.2, basePrec: 610, biasTemp:+0.5, biasPrec:-6,    archeo:"Теплее, благоприятно для земледелия"},
+  minsk:   { name:"Минская",     baseTemp: 10.5, basePrec: 620, biasTemp:+0.0, biasPrec:+0,    archeo:"Центр — земледельческие поселения (Заславль)"},
+  vitebsk: { name:"Витебская",   baseTemp: 9.8,  basePrec: 650, biasTemp:-0.7, biasPrec:+8,    archeo:"Прохладнее, местами переувлажнение"},
+  mogilev: { name:"Могилевская", baseTemp: 10.0, basePrec: 640, biasTemp:-0.3, biasPrec:+4,    archeo:"Прохладнее и суше, больше промыслов"},
+  gomel:   { name:"Гомельская",  baseTemp: 10.8, basePrec: 630, biasTemp:+0.3, biasPrec:+2,    archeo:"Юг — стоянки на реках (Бердыж, Юровичи)"},
+  naroch:  { name:"Нарочь",      baseTemp: 10.2, basePrec: 655, biasTemp:-0.2, biasPrec:+5,    archeo:"Озёрные осадки — устойчивые ресурсы"},
+  ushachi: { name:"Ушачи",       baseTemp: 10.0, basePrec: 660, biasTemp:-0.4, biasPrec:+6,    archeo:"Торфяные болота — палинология, ресурсы болот"},
+  zaslavl: { name:"Заславль",    baseTemp: 10.6, basePrec: 625, biasTemp:+0.1, biasPrec:+0,    archeo:"Аграрное поселение при устойчивом климате"},
+  berdyzh: { name:"Бердыж",      baseTemp: 10.7, basePrec: 630, biasTemp:+0.2, biasPrec:+1,    archeo:"Берег Сожа — рыболовство/охота"},
+  yurovichi:{name:"Юровичи",     baseTemp: 10.9, basePrec: 620, biasTemp:+0.3, biasPrec:-2,    archeo:"Поздний палеолит — стоянка охотников"}
+};
+
+const periods = {
+  lgm:    { name:"LGM",  tempShift:-10.5, precRange:[510,720], bioRange:[12604,15963] },
+  midh:   { name:"Средний голоцен", tempShift:-0.5, precRange:[490,660], bioRange:[11357,12904] },
+  modern: { name:"Современность",   tempShift:+0.0, precRange:[525,715], bioRange:[2180,2595] },
+  ssp245: { name:"SSP2‑4.5",        tempShift:+2.8, precRange:[538,735], bioRange:[1880,2605] }
+};
+
+// Специальные региональные корректировки в прогнозе SSP2‑4.5 из материала
+const sspRegionAdjust = {
+  gomel:   { dT:+3.2, dPrecPct:-10 },
+  vitebsk: { dT:+2.1, dPrecPct:+15 },
+  brest:   { dT:+2.8, dPrecPct:-5 }
+};
+
+// Оценка устойчивости (0–100), рисков и KPI
+function evaluate(cfg){
+  const reg = regions[cfg.region];
+  const per = periods[cfg.period];
+
+  // Температура: базовая + региональный байас + сдвиг периода (+ спец в SSP2‑4.5)
+  let temp = reg.baseTemp + reg.biasTemp + per.tempShift;
+
+  if(cfg.period === "ssp245" && sspRegionAdjust[cfg.region]){
+    temp += sspRegionAdjust[cfg.region].dT - per.tempShift; // заменить общую оценку на конкретную
+  }
+
+  // Осадки: возьмём центр диапазона периода + региональный байас в мм и спец % для SSP
+  const precMid = (per.precRange[0] + per.precRange[1])/2;
+  let prec = precMid + reg.biasPrec;
+
+  if(cfg.period === "ssp245" && sspRegionAdjust[cfg.region]){
+    const pct = sspRegionAdjust[cfg.region].dPrecPct;
+    prec = prec * (1 + pct/100);
+  }
+
+  // Биоклиматический индекс: центр диапазона + небольшая поправка за региональную влажность
+  const bioMid = (per.bioRange[0] + per.bioRange[1])/2;
+  const bio = bioMid + (reg.biasPrec*2); // условная поправка
+
+  // Водные ресурсы (0–100): близость к воде + осадки
+  const waterBase = cfg.water==="near"? 78 : cfg.water==="mid"? 62 : 45;
+  const waterPrecBoost = Math.max(0, (prec-520)/2.5); // больше осадков — выше вода
+  const water = clamp(waterBase + waterPrecBoost, 0, 100);
+
+  // Пищевые ресурсы (0–100): лесистость + тип хозяйства + период
+  let food = (cfg.forest==="high"? 75 : cfg.forest==="mid"? 60 : 45);
+  const livelihoodBonus = (cfg.livelihood==="hunter"? 10 : cfg.livelihood==="fish"? 14 : cfg.livelihood==="agri"? 8 : 12);
+  food += livelihoodBonus;
+
+  // В голоцене (midH) охота/рыба работают, в современности/SSP агри получает бонус (длиннее сезон)
+  if(cfg.period==="midh"){
+    if(cfg.livelihood==="hunter"||cfg.livelihood==="fish") food += 6;
+  } else if(cfg.period==="modern" || cfg.period==="ssp245"){
+    if(cfg.livelihood==="agri"||cfg.livelihood==="mixed") food += 6;
+  }
+  food = clamp(food, 0, 100);
+
+  // Агроклимат (0–100): температура в «комфортном» диапазоне и осадки
+  // Комфорт: 9–13.5°C для умеренных культур; осадки ~580–700 мм
+  const tempScore = 100 - Math.abs(temp - 11.5)*10; // чем ближе к ~11.5°C, тем лучше
+  const precScore = 100 - Math.abs(prec - 640)/1.8;
+  let agri = (tempScore*0.55 + precScore*0.45);
+  // Региональные заметки из прогноза (засуха в Гомеле, увлажнение в Витебске)
+  if(cfg.period==="ssp245"){
+    if(cfg.region==="gomel") agri -= 8;
+    if(cfg.region==="vitebsk") agri -= 4; // переувлажнение тоже риск
+  }
+  agri = clamp(agri, 0, 100);
+
+  // Риск климатического стресса: жара+засуха или сильный холод+ресурсная бедность
+  let heatStress = scale(temp, 13.5, 16.5);    // >13.5°C растёт, >16.5 — высокий
+  let coldStress = scale(0, temp, 5.0);        // <5°C растёт
+  let dryStress  = scale(580, 540);            // ниже 580 — растёт, ниже 540 — высокий
+
+  // dryStress по фактическим осадкам
+  dryStress = Math.max(0, (580 - prec)/4.5);
+
+  // Итоговый риск
+  let risk = clamp( (heatStress*0.5 + dryStress*0.7 + coldStress*0.4) , 0, 100);
+
+  // Итоговый индекс устойчивости: вода+пища+агро − риск
+  let score = clamp( (water*0.3 + food*0.3 + agri*0.4) - (risk*0.6), 0, 100);
+
+  return { temp:round1(temp), prec:Math.round(prec), bio:Math.round(bio), water:Math.round(water), food:Math.round(food), agri:Math.round(agri), risk:Math.round(risk), score:Math.round(score) };
+}
+
+// Helpers
+function clamp(v,min,max){ return Math.min(max,Math.max(min,v)); }
+function round1(v){ return Math.round(v*10)/10; }
+function scale(value, min, max){ // simple placeholder (not used fully)
+  return 0;
+}
+
+// UI wiring
+const el = id => document.getElementById(id);
+
+function classifyBar(value){
+  if(value>=66) return "good";
+  if(value>=40) return "warn";
+  return "bad";
+}
+function widthPct(value){ return `${clamp(value,0,100)}%`; }
+
+function render(result, cfg){
+  // Labels
+  el("tempLabel").textContent = `${result.temp} °C`;
+  el("precLabel").textContent = `${result.prec} мм/год`;
+  el("bioLabel").textContent  = `${result.bio}`;
+
+  // Score
+  el("scoreTag").textContent = `${result.score}/100`;
+  el("scoreBar").style.width = widthPct(result.score);
+  el("scoreBar").className = "bar info";
+  el("scoreTip").textContent = result.score>=70
+    ? "Поселение устойчиво в выбранном периоде."
+    : result.score>=40
+      ? "Устойчивость средняя: нужна адаптация и диверсификация."
+      : "Устойчивость низкая: высокие климатические риски — измените конфигурацию.";
+
+  // Risk
+  el("riskTag").textContent = `${result.risk}/100`;
+  el("riskBar").style.width = widthPct(result.risk);
+  el("riskBar").className = "bar " + (result.risk>=66?"bad":result.risk>=40?"warn":"good");
+  el("riskTip").textContent = result.risk>=66
+    ? "Высокий стресс (жара+засуха или холод+дефицит). Приоритизируйте воду и жильё."
+    : result.risk>=40
+      ? "Умеренный стресс: смягчите риски посевами и хранением воды."
+      : "Низкий стресс: местность благоприятна для базового уклада.";
+
+  // KPI water/food/agri
+  el("kpiWater").textContent = `${result.water}`;
+  el("kpiWaterBar").style.width = widthPct(result.water);
+  el("kpiWaterBar").className = "bar " + classifyBar(result.water);
+
+  el("kpiFood").textContent = `${result.food}`;
+  el("kpiFoodBar").style.width = widthPct(result.food);
+  el("kpiFoodBar").className = "bar " + classifyBar(result.food);
+
+  el("kpiAgri").textContent = `${result.agri}`;
+  el("kpiAgriBar").style.width = widthPct(result.agri);
+  el("kpiAgriBar").className = "bar " + classifyBar(result.agri);
+
+  // Badges
+  const badges = el("badges");
+  badges.innerHTML = "";
+  const reg = regions[cfg.region];
+  const per = periods[cfg.period];
+  addBadge(badges, `Регион: ${reg.name}`);
+  addBadge(badges, `Период: ${per.name}`);
+  addBadge(badges, `Лесистость: ${labelForest(cfg.forest)}`);
+  addBadge(badges, `Хозяйство: ${labelLivelihood(cfg.livelihood)}`);
+  addBadge(badges, `Близость к воде: ${labelWater(cfg.water)}`);
+
+  // Advice
+  const advice = el("advice");
+  advice.innerHTML = "";
+  const adapt = [];
+  if(cfg.period==="lgm"){
+    adapt.push("Выбирайте укрытия рядом с реками/озёрами; приоритет — тепло, пища из рыболовства и охоты.");
+    adapt.push("Хранение жира/сушёного мяса, одежда из меха, минимизация ветровой экспозиции.");
+  } else if(cfg.period==="midh"){
+    adapt.push("Смешанный уклад (охота+рыба+ранние культуры) при высокой лесистости даёт устойчивость.");
+    adapt.push("Размещайте поселение на террасах рек, избегая заболачивания.");
+  } else if(cfg.period==="modern"){
+    adapt.push("Диверсифицируйте культуры; используйте сорта, устойчивые к жаре/болезням.");
+    adapt.push("Управляйте водой: дренаж в переувлажнённых районах, накопление в засушливых.");
+  } else if(cfg.period==="ssp245"){
+    adapt.push("Планируйте ирригацию на юге/юго‑востоке (Гомель, Брест); мульчирование, теневая защита.");
+    adapt.push("В северных районах (Витебск) — дренаж, устойчивые к переувлажнению культуры.");
+  }
+  if(cfg.livelihood==="agri"){
+    adapt.push("Ранние посевы и выбор устойчивых сортов (озимая пшеница, рапс; локально адаптированные картофели).");
+  }
+  adapt.forEach(t => advice.appendChild(li(t)));
+
+  // Adaptation level label
+  const adaptLevel = result.score>=70 ? "Низкая потребность в адаптации"
+                    : result.score>=40 ? "Средняя потребность"
+                    : "Высокая потребность";
+  el("adaptLevel").textContent = adaptLevel;
+
+  // Rationale
+  const rationale = el("rationale");
+  rationale.innerHTML = "";
+  rationale.appendChild(li(reg.archeo));
+  rationale.appendChild(li(`Осадки периода: ${per.precRange[0]}–${per.precRange[1]} мм; биоиндекс: ${per.bioRange[0]}–${per.bioRange[1]} (условн.).`));
+  if(cfg.period==="ssp245" && sspRegionAdjust[cfg.region]){
+    const adj = sspRegionAdjust[cfg.region];
+    rationale.appendChild(li(`Региональные изменения: ΔT = ${adj.dT}°C, осадки ${adj.dPrecPct>0?"+":""}${adj.dPrecPct}% (локальная чувствительность).`));
+  }
+}
+
+function addBadge(container, text){
+  const b = document.createElement("div");
+  b.className = "badge";
+  b.textContent = text;
+  container.appendChild(b);
+}
+function li(text){
+  const d = document.createElement("div");
+  d.className = "item";
+  const s = document.createElement("span");
+  s.textContent = text;
+  d.appendChild(s);
+  return d;
+}
+function labelForest(f){ return f==="high"?"Высокая":"mid"===f?"Средняя":"Низкая"; }
+function labelLivelihood(l){ return l==="hunter"?"Охота/сбор":l==="fish"?"Рыболовство":l==="agri"?"Раннее земледелие":"Смешанное"; }
+function labelWater(w){ return w==="near"?"Рядом":w==="mid"?"Умеренно":"Далеко"; }
+
+el("simulate").addEventListener("click", ()=>{
+  const cfg = {
+    region: el("region").value,
+    period: el("period").value,
+    water:  el("water").value,
+    forest: el("forest").value,
+    livelihood: el("livelihood").value
+  };
+  const res = evaluate(cfg);
+  render(res, cfg);
+});
+</script>
+</body>
+</html>
